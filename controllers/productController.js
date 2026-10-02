@@ -1,5 +1,4 @@
 const {
-  getCacheEntry,
   setCacheEntry,
   getAllProductsService,
   getProductByIdService,
@@ -9,14 +8,11 @@ const {
   deleteProductService,
 } = require("../services/productService");
 
-// GET /products
 async function getProducts(req, res) {
   try {
-    const key = req.cacheKey;
-
+    const key = req.cacheKey || (req.originalUrl || req.url).replace(/\/+$/, "") || "/";
     const products = await getAllProductsService();
     setCacheEntry(key, products);
-
     res.set("X-Cache", "MISS");
     return res.json(products);
   } catch (err) {
@@ -25,10 +21,9 @@ async function getProducts(req, res) {
   }
 }
 
-// GET /products/:id
 async function getProductById(req, res) {
   try {
-    const key = req.cacheKey;
+    const key = req.cacheKey || (req.originalUrl || req.url).replace(/\/+$/, "") || "/";
     const { id } = req.params;
 
     const product = await getProductByIdService(id);
@@ -45,7 +40,6 @@ async function getProductById(req, res) {
   }
 }
 
-// POST /products
 async function createProduct(req, res) {
   try {
     const newProduct = await createProductService(req.body);
@@ -56,7 +50,6 @@ async function createProduct(req, res) {
   }
 }
 
-// PUT /products/:id
 async function updateProduct(req, res) {
   try {
     const { id } = req.params;
@@ -69,7 +62,6 @@ async function updateProduct(req, res) {
   }
 }
 
-// PATCH /products/:id
 async function patchProduct(req, res) {
   try {
     const { id } = req.params;
@@ -82,7 +74,6 @@ async function patchProduct(req, res) {
   }
 }
 
-// DELETE /products/:id
 async function deleteProduct(req, res) {
   try {
     const { id } = req.params;

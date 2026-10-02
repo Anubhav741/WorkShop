@@ -1,25 +1,26 @@
-const { getCacheEntry } = require("../services/productService");
+const { getCacheEntry, setCacheEntry } = require("../services/productService");
 
-/**
- * Cache middleware for GET requests.
- *
- * - Attaches `req.cacheKey` (the request URL) so controllers can write back to cache.
- * - If a valid (non-expired) cache entry exists, responds immediately with X-Cache: HIT.
- * - Otherwise calls next() so the controller fetches fresh data and sets X-Cache: MISS.
- */
 function cacheMiddleware(req, res, next) {
-  const key = req.url;
+  const key = (req.originalUrl || req.url).replace(/\/+$/, "") || "/";
   req.cacheKey = key;
 
   const entry = getCacheEntry(key);
 
   if (entry) {
-    console.log(`[Cache HIT] ${key}`);
     res.set("X-Cache", "HIT");
     return res.json(entry.data);
   }
 
-  console.log(`[Cache MISS] ${key}`);
+  res.set("X-Cache", "MISS");
+
+  const originalJson = res.json.bind(res);
+  res.json = (data) => {
+    if (res.statusCode >= 200 && res.statusCode < 300) {
+      setCacheEntry(key, data);
+    }
+    return originalJson(data);
+  };
+
   next();
 }
 
